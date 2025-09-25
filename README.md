@@ -11,6 +11,8 @@ This script models the pathloss for the James Webb Space Telescope (JWST) Near-I
 *   **FITS File Generation:** Creates and updates FITS files with the modeled pathloss and its associated variance, suitable for use in astronomical data analysis pipelines.
 *   **Command-Line Interface:** Offers a flexible command-line interface to control the script's execution, including plotting, prediction, and FITS file updates.
 
+![new pathloss plot](jwst_nirspec_pathloss_erf_arrays_plot_by_wavelength.png)
+
 ## Installation
 
 This script requires the following Python libraries:
