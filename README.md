@@ -12,6 +12,8 @@ This script models the pathloss for the James Webb Space Telescope (JWST) Near-I
 *   **Command-Line Interface:** Offers a flexible command-line interface to control the script's execution, including plotting, prediction, and FITS file updates.
 
 ![new pathloss plot](jwst_nirspec_pathloss_erf_arrays_plot_by_wavelength.png)
+ 
+[additional plots here](https://stsci.box.com/v/NIRSpec-MOS-pathloss-interp)
 
 ## Installation
 
