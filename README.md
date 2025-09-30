@@ -1,6 +1,11 @@
 # JWST NIRSpec Pathloss Model
 
-This script models the pathloss for the James Webb Space Telescope (JWST) Near-Infrared Spectrograph (NIRSpec) instrument. The pathloss is the fraction of light from a point source that is lost due to the finite size of the spectrograph slit. This model is based on the error function (erf), which is derived from integrating a Gaussian Point Spread Function (PSF) over a rectangular slit.
+This script models the pathloss for JWST NIRSpec MOS (multi-object spectrograph). The pathloss is the fraction of light from a point source that is lost due to the finite size of the spectrograph slit.
+
+NIRSpec MOS pathlosses were measured by Elena Manjavacas (STScI). This script interpolates those measurements onto a regular grid using the error function (erf), which is derived from integrating a Gaussian Point Spread Function (PSF) over a rectangular slit. It then also calculates uncertainties.
+
+Code and plots are provided here, with
+[additional plots available on Box](https://stsci.box.com/v/NIRSpec-MOS-pathloss-interp).
 
 ## Features
 
@@ -11,9 +16,7 @@ This script models the pathloss for the James Webb Space Telescope (JWST) Near-I
 *   **FITS File Generation:** Creates and updates FITS files with the modeled pathloss and its associated variance, suitable for use in astronomical data analysis pipelines.
 *   **Command-Line Interface:** Offers a flexible command-line interface to control the script's execution, including plotting, prediction, and FITS file updates.
 
-![new pathloss plot](jwst_nirspec_pathloss_erf_arrays_plot_by_wavelength.png)
- 
-[additional plots here](https://stsci.box.com/v/NIRSpec-MOS-pathloss-interp)
+![new pathloss plot](plots/jwst_nirspec_pathloss_erf_plot.png)
 
 ## Installation
 
@@ -100,6 +103,19 @@ The model has four primary parameters that are determined by fitting to the data
 *   `psf_sy`: The standard deviation (sigma) of the Gaussian PSF in the y-direction.
 
 The script fits these parameters for each wavelength present in the input data.
+
+![parameters plot](plots/model_parameters_vs_wavelength.png)
+
+
+## Uncertainties Calculation
+
+* measure bias and scatter of residuals in (x,y) bins; add in quadrature
+* rebin that uncertainty in "radial" bins defined by the erf function
+* smooth bias vs. radius, then make it increase monotonically
+
+Below is the model fitting and uncertainties calculation for 1.31µm:
+
+![uncertainties plot](plots/model_erf_uncertainties_1.31um.png)
 
 ## Outputs
 
