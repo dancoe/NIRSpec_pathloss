@@ -9,7 +9,55 @@ Code and plots are provided here, with
 
 ![new pathloss plot](plots/jwst_nirspec_pathloss_erf_plot.png)
 
-## Features
+## Model Fitting
+
+Input: measurements of transmission $T(x,y,\lambda)$
+at 21 wavelengths $\lambda$ and positions ($x$,$y$) within the slit,
+where the center is defined as $(0,0)$ and coordinates range from $-0.5$ to $+0.5$.
+
+Given the sparse measurements, we first replicate each measurement across both the $x$ and $y$ axes, assuming transmission $T(x,y)$ and pathloss $P(x,y)$ = $1-T(x,y)$ are symmetric within the slit across $x$ and $y$.
+
+Then we fit the transmissions to a physical model for the throughput of a point source through a rectangular aperture. Approximating the PSF as a Gaussian and integrating over the area of the rectangular slit, the transmission is given by the error function (`erf`). The transmission is modeled independently on each axis:
+
+$$
+T(x,y) = T_x(x) \times T_y(y)
+$$
+
+where:
+
+$$
+T_x(x) = \frac{1}{2} \left[ \mathrm{erf}\!\left(\frac{w_x/2 - x}{\sqrt{2}\,\sigma_x}\right) - \mathrm{erf}\!\left(\frac{-w_x/2 - x}{\sqrt{2}\,\sigma_x}\right) \right]
+$$
+
+and:
+
+$$
+T_y(y) = \frac{1}{2} \left[ \mathrm{erf}\!\left(\frac{w_y/2 - y}{\sqrt{2}\,\sigma_y}\right) - \mathrm{erf}\!\left(\frac{-w_y/2 - y}{\sqrt{2}\,\sigma_y}\right) \right]
+$$
+
+At each wavelength $\lambda$, four free parameters are fit to the data:
+*   ($w_x$, $w_y$): The full width of the slit in $x$ and $y$
+*   ($\sigma_x$, $\sigma_y$): The standard deviation of the Gaussian PSF in each direction
+
+We find our best fit parameters increase monotonically with wavelength (without enforcing that). We tabulate these values and plot them below. To extract pathloss estimates at any wavelength, we interpolate values of each parameter to determine the pathloss at that wavelength.
+
+![parameters plot](plots/model_parameters_vs_wavelength.png)
+
+
+## Uncertainties Calculation
+
+To calculate uncertainties, we measure the residuals between each dataset and our model.
+We bin these residuals in $(x,y)$ and measure the average bias and RMS scatter in each bin.
+We add bias and scatter in quadrature to estimate a total uncertainty in each bin.
+We then rebin those uncertainties in "radial" bins that follow the contours of the model.
+We smooth that uncertainty across "radial" bins.
+And finally, we enforce monotonic increase with "radius".
+
+Below, we show our model fitting and uncertainty calculations for 1.31µm:
+
+![uncertainties plot](plots/model_erf_uncertainties_1.31um.png)
+
+## Code Features
 
 *   **Physical Modeling:** Implements a 2D physical model for PSF throughput through a rectangular slit using the error function.
 *   **Data Fitting:** Fits the model to observational data to determine key parameters like slit dimensions and PSF size as a function of wavelength.
@@ -45,7 +93,7 @@ To run the full analysis, including fitting the model to the data and generating
 python model_pathloss_data.py
 ```
 
-This will create a new directory (e.g., `plots_throughput_model_sparse1`) containing all the output plots.
+This will create a new numbered directory (e.g., `plots_throughput_model_sparse1`) containing all the output plots.
 
 ### Command-Line Arguments
 
@@ -91,36 +139,6 @@ This will create a new directory (e.g., `plots_throughput_model_sparse1`) contai
 *   `jwst_nirspec_pathloss_erf_arrays_plot_by_wavelength.png`: A plot showing the pathloss and variance arrays from the FITS file for each wavelength.
 *   `../data/flip_xy_slitlosses/`: The directory assumed to contain the input slit-loss data files (not included in this directory).
 
-## Method and Calculations
-
-This script implements a physical model for the throughput of a point source through a rectangular aperture, such as the NIRSpec micro-shutter assembly. The model assumes a Gaussian Point Spread Function (PSF) for the source. The throughput is calculated by integrating the 2D Gaussian PSF over the area of the rectangular slit.
-
-The (x, y) coordinates represent the offset of the center of the point source from the center of the slit, in arcseconds. The data used for fitting typically covers a range of approximately -0.5 to +0.5 arcseconds in both x and y.
-
-Since the 2D Gaussian is separable, the total 2D throughput `T(x, y)` is the product of two independent 1D integrals. Each 1D integral is calculated analytically using the error function (`erf`), which is the integral of a Gaussian distribution.
-
-The 1D throughput in the x-direction is given by:  
-`T_x(x) = 0.5 * [erf((w_x/2 - x) / (sqrt(2) * sigma_x)) - erf((-w_x/2 - x) / (sqrt(2) * sigma_x))]`
-
-Similarly, the 1D throughput in the y-direction is:  
-`T_y(y) = 0.5 * [erf((w_y/2 - y) / (sqrt(2) * sigma_y)) - erf((-w_y/2 - y) / (sqrt(2) * sigma_y))]`
-
-The total 2D throughput is then:
-`T(x, y) = T_x(x) * T_y(y)`
-
-The model has four free parameters which are fit to the data for each wavelength:
-*   `w_x`: The full width of the slit in the x-direction (`slit_w`).
-*   `w_y`: The full height of the slit in the y-direction (`slit_h`).
-*   `sigma_x`: The standard deviation of the Gaussian PSF in the x-direction (`psf_sx`).
-*   `sigma_y`: The standard deviation of the Gaussian PSF in the y-direction (`psf_sy`).
-
-The model parameters are fit to observational data of stellar path-loss measurements at various offsets from the center of the slit. The fitting is performed for each wavelength independently using a least-squares optimization (`scipy.optimize.least_squares`). The script also includes a detailed uncertainty analysis. The residuals between the model and the data are used to create a 2D uncertainty map. A key feature of this analysis is the creation of a monotonic uncertainty model. This model enforces the physically motivated assumption that the uncertainty in the path-loss correction increases monotonically with distance from the center of the slit. The final products are model-generated path-loss and variance arrays, which can be saved to a FITS file. The script can also interpolate the fitted model parameters to any wavelength, providing a continuous model of the path-loss across the NIRSpec wavelength range.
-
-![parameters plot](plots/model_parameters_vs_wavelength.png)
-
-Below is the model fitting and uncertainties calculation for 1.31µm:
-
-![uncertainties plot](plots/model_erf_uncertainties_1.31um.png)
 
 ## Outputs
 
