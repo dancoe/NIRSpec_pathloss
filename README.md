@@ -26,20 +26,20 @@ $$
 where:
 
 $$
-T_x(x) = \frac{1}{2} \left[ \mathrm{erf}\!\left(\frac{w_x/2 - x}{\sqrt{2}\,\sigma_x}\right) - \mathrm{erf}\!\left(\frac{-w_x/2 - x}{\sqrt{2}\,\sigma_x}\right) \right]
+T_x(x) = \frac{1}{2} \left[ \mathrm{erf}\left(\frac{w_x/2 - x}{\sqrt{2}\,\sigma_x}\right) - \mathrm{erf}\left(\frac{-w_x/2 - x}{\sqrt{2}\,\sigma_x}\right) \right]
 $$
 
 and:
 
 $$
-T_y(y) = \frac{1}{2} \left[ \mathrm{erf}\!\left(\frac{w_y/2 - y}{\sqrt{2}\,\sigma_y}\right) - \mathrm{erf}\!\left(\frac{-w_y/2 - y}{\sqrt{2}\,\sigma_y}\right) \right]
+T_y(y) = \frac{1}{2} \left[ \mathrm{erf}\left(\frac{w_y/2 - y}{\sqrt{2}\,\sigma_y}\right) - \mathrm{erf}\left(\frac{-w_y/2 - y}{\sqrt{2}\,\sigma_y}\right) \right]
 $$
 
 At each wavelength $\lambda$, four free parameters are fit to the data:
 *   ($w_x$, $w_y$): The full width of the slit in $x$ and $y$
 *   ($\sigma_x$, $\sigma_y$): The standard deviation of the Gaussian PSF in each direction
 
-We find our best fit parameters increase monotonically with wavelength (without enforcing that). We tabulate these values and plot them below. To extract pathloss estimates at any wavelength, we interpolate values of each parameter to determine the pathloss at that wavelength.
+We find our best fit parameters increase roughly monotonically with wavelength (with a few small deviations and without enforcing that). We tabulate these values and plot them below. To extract pathloss estimates at any wavelength, we interpolate values of each parameter to determine the pathloss at that wavelength.
 
 ![parameters plot](plots/model_parameters_vs_wavelength.png)
 
@@ -50,8 +50,8 @@ To calculate uncertainties, we measure the residuals between each dataset and ou
 We bin these residuals in $(x,y)$ and measure the average bias and RMS scatter in each bin.
 We add bias and scatter in quadrature to estimate a total uncertainty in each bin.
 We then rebin those uncertainties in "radial" bins that follow the contours of the model.
-We smooth that uncertainty across "radial" bins.
-And finally, we enforce monotonic increase with "radius".
+We define radius = sqrt(–2 ln(T)) to mimic distance from peak transmission.
+We smooth uncertainty across radial bins and enforce monotonic increase with radius.
 
 Below, we show our model fitting and uncertainty calculations for 1.31µm:
 
