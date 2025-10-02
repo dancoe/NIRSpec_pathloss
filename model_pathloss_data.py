@@ -675,21 +675,48 @@ def plot_scatter_vs_pathloss(pathloss_bins, rms_scatter, wavelength, outdir):
         plt.close(fig)
 
 def plot_params_vs_wavelength(all_results, outdir):
-    """Plots the fitted model parameters vs. wavelength on a single plot."""
-    
+    """Plots the fitted model parameters vs. wavelength on a single plot
+    and writes a sibling ASCII table with the same basename (.txt).
+
+    The ASCII table includes min/max of the ERF pathloss model evaluated on
+    the default pathloss grid returned by define_pathloss_grid().
+    """
     wavelengths = [res['wavelength'] for res in all_results]
     param_keys = ['slit_w', 'slit_h', 'psf_sx', 'psf_sy']
-    params = {key: [res['params'][key] for res in all_results] for key in param_keys}
 
+    # Gather values per parameter
+    params_series = {key: [res['params'][key] for res in all_results] for key in param_keys}
+
+    # Human-friendly legend labels
+    label_map = {
+        'slit_w': 'slit width',
+        'slit_h': 'slit height',
+        'psf_sx': 'PSF σ_x',
+        'psf_sy': 'PSF σ_y',
+    }
+
+    # Prepare grid once; default is 31x31 over [-0.5, 0.5] in both axes
+    x_grid, y_grid = define_pathloss_grid(extend_grid=False)
+
+    # Precompute model min/max per wavelength on the grid
+    pathloss_mins = []
+    pathloss_maxs = []
+    for res in all_results:
+        p = dict(res['params'])  # copy to avoid accidental mutation
+        # Evaluate the erf model on the grid
+        model_grid = evaluate_throughput_model(x_grid, y_grid, **p)
+        pathloss_mins.append(float(np.nanmin(model_grid)))
+        pathloss_maxs.append(float(np.nanmax(model_grid)))
+
+    # Plot
     fig, ax = plt.subplots(1, 1, figsize=(12, 8))
-    
     for key in param_keys:
-        ax.plot(wavelengths, params[key], 'o-', label=key)
-
+        ax.plot(wavelengths, params_series[key], 'o-', label=label_map[key])
     ax.set_xlabel("Wavelength (µm)")
     ax.set_ylabel("Parameter Value")
     ax.set_title("Model Parameters vs. Wavelength", fontsize=16)
     ax.grid(True)
+    ax.set_ylim(0, 1)  # per your request
     ax.legend()
     plt.tight_layout(rect=(0, 0.03, 1, 0.96))
 
@@ -698,7 +725,31 @@ def plot_params_vs_wavelength(all_results, outdir):
         filename = f"{outdir}/model_params_vs_wavelength.png"
         plt.savefig(filename, dpi=150)
         print(f"Summary plot saved to {filename}")
-        plt.close(fig)
+
+        # Also write ASCII table with same basename (.txt)
+        txtfile = os.path.splitext(filename)[0] + ".txt"
+        with open(txtfile, "w", encoding="utf-8") as fh:
+            # Header (tab-separated)
+            fh.write(
+                "index\twavelength\tslit width\tslit height\tPSF sigma_x\tPSF sigma_y\tmax value\tmin value\n"
+            )
+            for i, (wl, sw, sh, sx, sy, pl_max, pl_min) in enumerate(
+                zip(
+                    wavelengths,
+                    params_series['slit_w'],
+                    params_series['slit_h'],
+                    params_series['psf_sx'],
+                    params_series['psf_sy'],
+                    pathloss_maxs,
+                    pathloss_mins,
+                ),
+                start=1,
+            ):
+                fh.write(
+                    f"{i}\t{wl:.6f}\t{sw:.6f}\t{sh:.6f}\t{sx:.6f}\t{sy:.6f}\t{pl_max:.6f}\t{pl_min:.6f}\n"
+                )
+        print(f"ASCII data saved to {txtfile}")
+    plt.close(fig)
 
 def plot_scatter_summary(all_results, outdir):
     """Plots the RMS scatter vs. pathloss for all wavelengths on a single plot."""
